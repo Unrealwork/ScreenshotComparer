@@ -1,14 +1,15 @@
 import org.apache.commons.io.FileUtils;
 import org.im4java.core.CompareCmd;
-import org.im4java.process.StandardStream;
 import org.im4java.core.IMOperation;
-import org.jboss.netty.util.Timeout;
+import org.im4java.process.StandardStream;
+import org.openqa.selenium.Capabilities;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.openqa.selenium.phantomjs.PhantomJSDriver;
+import org.openqa.selenium.phantomjs.PhantomJSDriverService;
+import org.openqa.selenium.remote.DesiredCapabilities;
 
 import java.io.File;
 import java.io.IOException;
@@ -21,14 +22,22 @@ import java.util.TimerTask;
 public class ScreenshotComparer extends TimerTask {
     private File previousScr;
     private WebDriver driver;
-    private URI pageUri;
-    private static final String PREV_SCR ="prev_scr";
-    private static final String NEW_SCR ="new_scr";
-    private static final String DIFF_SCR = "diff_scr";
+    private static final String PREV_SCR ="screenshots/prev_scr.png";
+    private static final String NEW_SCR ="screenshots/new_scr.png";
+    private static final String DIFF_SCR = "screenshots/diff_scr.png";
+    private Capabilities caps;
 
 
     ScreenshotComparer(URI uri){
-        driver = new FirefoxDriver();
+        caps = new DesiredCapabilities();
+        ((DesiredCapabilities) caps).setJavascriptEnabled(true);
+        ((DesiredCapabilities) caps).setCapability("takesScreenshot", true);
+        ((DesiredCapabilities) caps).setCapability(
+                PhantomJSDriverService.PHANTOMJS_EXECUTABLE_PATH_PROPERTY,
+                "/usr/bin/phantomjs"
+        );
+        driver = new PhantomJSDriver(caps);
+        driver.manage().window().maximize();
         driver.get(uri.toString());
         previousScr = takeScreenshot(PREV_SCR);
     }

@@ -14,7 +14,7 @@ public class Application {
         try {
             Date date = new Date();
             long delay = 5000;
-            TimerTask task = new ScreenshotComparer(new URI("http://vk.com/"));
+            TimerTask task = new ScreenshotComparer(new URI("https://nur.axibase.com/"));
             timer.schedule(task, date, delay);
         } catch (URISyntaxException e) {
             e.printStackTrace();
