@@ -2,14 +2,15 @@ import org.apache.commons.io.FileUtils;
 import org.im4java.core.CompareCmd;
 import org.im4java.core.IMOperation;
 import org.im4java.process.StandardStream;
-import org.openqa.selenium.Capabilities;
-import org.openqa.selenium.OutputType;
-import org.openqa.selenium.TakesScreenshot;
-import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.*;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.phantomjs.PhantomJSDriver;
 import org.openqa.selenium.phantomjs.PhantomJSDriverService;
 import org.openqa.selenium.remote.DesiredCapabilities;
+import org.openqa.selenium.support.ui.ExpectedCondition;
+import org.openqa.selenium.support.ui.WebDriverWait;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -20,15 +21,15 @@ import java.util.TimerTask;
  * Created by shmgrinsky on 25.03.16.
  */
 public class ScreenshotComparer extends TimerTask {
-    private File previousScr;
+    private static final Logger LOG = LoggerFactory.getLogger(ScreenshotComparer.class);
     private WebDriver driver;
-    private static final String PREV_SCR ="screenshots/prev_scr.png";
-    private static final String NEW_SCR ="screenshots/new_scr.png";
+    private static final String PREV_SCR = "screenshots/prev_scr.png";
+    private static final String NEW_SCR = "screenshots/new_scr.png";
     private static final String DIFF_SCR = "screenshots/diff_scr.png";
     private Capabilities caps;
+    private URI uri;
 
-
-    ScreenshotComparer(URI uri){
+    ScreenshotComparer(URI uri) {
         caps = new DesiredCapabilities();
         ((DesiredCapabilities) caps).setJavascriptEnabled(true);
         ((DesiredCapabilities) caps).setCapability("takesScreenshot", true);
@@ -38,12 +39,20 @@ public class ScreenshotComparer extends TimerTask {
         );
         driver = new PhantomJSDriver(caps);
         driver.manage().window().maximize();
-        driver.get(uri.toString());
-        previousScr = takeScreenshot(PREV_SCR);
+        this.uri = uri;
     }
 
-    private File takeScreenshot(String path){
-        File scrFile = ((TakesScreenshot)driver).
+    private File takeScreenshot(String path) {
+        driver.get(uri.toString());
+        WebDriverWait webDriverWait = new WebDriverWait(driver, 12, 180);
+        ExpectedCondition<Boolean> condition = new ExpectedCondition<Boolean>() {
+            public Boolean apply(WebDriver webDriver) {
+                JavascriptExecutor js = (JavascriptExecutor) driver;
+                return (Boolean) js.executeScript("return jQuery.active == 0");
+            }
+        };
+        webDriverWait.until(condition);
+        File scrFile = ((TakesScreenshot) driver).
                 getScreenshotAs(OutputType.FILE);
         try {
             FileUtils.copyFile(scrFile, new File(path));
@@ -54,7 +63,7 @@ public class ScreenshotComparer extends TimerTask {
     }
 
 
-    private static boolean  compareImages (String exp, String cur, String diff) {
+    private static boolean compareImages(String exp, String cur, String diff) {
         // This instance wraps the compare command
         CompareCmd compare = new CompareCmd();
 
@@ -77,8 +86,7 @@ public class ScreenshotComparer extends TimerTask {
             // Do the compare
             compare.run(cmpOp);
             return true;
-        }
-        catch (Exception ex) {
+        } catch (Exception ex) {
             return false;
         }
     }
@@ -87,14 +95,16 @@ public class ScreenshotComparer extends TimerTask {
         driver.close();
     }
 
-    public void run(){
-        File newScr = takeScreenshot(NEW_SCR);
-        boolean isEqualsScreenshot = compareImages(NEW_SCR,PREV_SCR,DIFF_SCR);
+    public void run() {
+        LOG.info("Screenshoter initialized");
+        takeScreenshot(NEW_SCR);
+        LOG.info("Screenshot are taken and saved in {}", NEW_SCR);
+        /*boolean isEqualsScreenshot = compareImages(NEW_SCR,PREV_SCR,DIFF_SCR);
         if (isEqualsScreenshot) {
             System.out.println("Screenshots are equals");
         } else {
             System.out.println("Screenshots are different");
-        }
+        }*/
     }
 
 }

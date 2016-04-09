@@ -14,8 +14,8 @@ public class Application {
         try {
             Date date = new Date();
             long delay = 5000;
-            TimerTask task = new ScreenshotComparer(new URI("https://nur.axibase.com/"));
-            timer.schedule(task, date, delay);
+            TimerTask task = new ScreenshotComparer(new URI("http://apps.axibase.com/chartlab/c1acecc0/1/"));
+            timer.schedule(task, date);
         } catch (URISyntaxException e) {
             e.printStackTrace();
         }
